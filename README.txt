@@ -33,3 +33,10 @@ those that exist are detailed in the comments.
 
 TestProcessIn.js is a method for testing Process.in(). It is currently configured to demonstrate an error that I found in
 the interaction between taking input in node.js and globals itself. See (or run) the program for more details.
+
+
+PATCH NOTES (7/27/12)
+In this version, StarBattleship has been renamed StarBattleshipOld, and the new StarBattleship is distinct and built from
+scratch. The new StarBattleship has a different way of storing information that is more suited to Globals and it has a
+different (but mostly improved) feature list. This will be the last update for a while because I will be on break until
+August 6.
