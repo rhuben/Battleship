@@ -40,3 +40,7 @@ In this version, StarBattleship has been renamed StarBattleshipOld, and the new 
 scratch. The new StarBattleship has a different way of storing information that is more suited to Globals and it has a
 different (but mostly improved) feature list. This will be the last update for a while because I will be on break until
 August 6.
+
+PATCH NOTES (8/6/12)
+This contains many small updates, primarily new and improved methods. epsilonPerturb(), listClosePOI(), printVisible(), 
+listVisible(), trim() (which is my personal favorite), and printPOIList() have all been added.

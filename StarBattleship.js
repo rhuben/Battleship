@@ -43,7 +43,7 @@ var assert=require('assert');
  * global: game
  * subscripts:
  * parameters //don't implement this yet
- * 		maxSize=1000
+ * 		scaleLength=1000
  * 		etc
  * POI //POI=point(s) of interest
  * 		[0,0,0]
@@ -62,33 +62,48 @@ var assert=require('assert');
  * 
  * all objects in the game are stored as locations first,
  * so positions can be continuous (ie they don't have to be integers)
- * and they only store 
+ * and they only store positions which have things
  * 
  */
 
-var maxSize=1000;
+ 
+var scaleLength=1000;
 startGame();
+
+
+/*
+var a= "100.1232421421";
+console.log("a: "+ a);
+console.log("trimmed a: "+ trim(a)); */
+
 
 //<intializing functions>
 function startGame()
 {
 	console.log("Game started!");
 	var board= initializeMap();
-	console.log("\nWelcome to Star Battleship! This game is currently in a"+
+/*	console.log("\nWelcome to Star Battleship! This game is currently in a"+
 			" very early version, but hopefully you can see some interesting features!");
 	console.log("Let's add some randomly generated planets (only 2, but you can change that) to an empty 3-D map of space." +
-			" Now I am going to add bases and a ship.");
+			" Now I am going to add bases and a ship."); */
 	
 	addShip(board, [0,0,0],"fighter", "blue");
-	console.log("\nLet's take a look at what we have added:");
+	addShip(board, [0,0,0],"fighter", "blue");
+	addShip(board, [0,0,0],"fighter", "blue");
+	addShip(board, [0,0,0],"fighter", "blue");
+	addShip(board, [0,0,0],"fighter", "red");
+//	console.log("\nLet's take a look at what we have added:");
 	printAllPOIs(board);
-	console.log("\nNow let's move that ship and take another look at the map.");
+/*	console.log("\nNow let's move that ship and take another look at the map.");
 	move (board, [0,0,0], [200,100,100]);
 	printAllPOIs(board);
 	
 	console.log("\nNote that the ship could only move 200 units, so it traveled as far as possible in that direction.");
-	
-	
+	*/
+	console.log("\n");
+
+	printVisible(board, "blue");
+	printVisible(board, "red");
 	finishGame(board);
 }
 
@@ -118,30 +133,36 @@ function emptyMap() //returns a new empty global
 
 function addConstants(board) //adds constants like the speed and range of ships
 {
-	board.set("game", "constants", "fighter", "speed", 200/1000*maxSize);
-	board.set("game", "constants", "fighter", "sight", 100/1000*maxSize);
-	board.set("game", "constants", "fighter", "range", 40/1000*maxSize);
-	board.set("game", "constants", "fighter", "cost", 10/1000*maxSize);
+	//note: these numbers may be WAY off, and should be subject to tweaking
+	board.set("game", "constants", "fighter", "speed", 200/1000*scaleLength);
+	board.set("game", "constants", "fighter", "sight", 100/1000*scaleLength);
+	board.set("game", "constants", "fighter", "range", 40/1000*scaleLength);
+	board.set("game", "constants", "fighter", "cost", 10/1000*scaleLength);
 	
-	board.set("game", "constants", "monitor", "speed", 150/1000*maxSize);
-	board.set("game", "constants", "monitor", "sight", 300/1000*maxSize);
-	board.set("game", "constants", "monitor", "range", 0/1000*maxSize);
-	board.set("game", "constants", "monitor", "cost", 0/1000*maxSize);
+	board.set("game", "constants", "monitor", "speed", 150/1000*scaleLength);
+	board.set("game", "constants", "monitor", "sight", 300/1000*scaleLength);
+	board.set("game", "constants", "monitor", "range", 0/1000*scaleLength);
+	board.set("game", "constants", "monitor", "cost", 0/1000*scaleLength);
 	
-	board.set("game", "constants", "harvester", "speed", 100/1000*maxSize);
-	board.set("game", "constants", "harvester", "sight", 50/1000*maxSize);
-	board.set("game", "constants", "harvester", "range", 0/1000*maxSize);
-	board.set("game", "constants", "harvester", "cost", 0/1000*maxSize);
+	board.set("game", "constants", "harvester", "speed", 100/1000*scaleLength);
+	board.set("game", "constants", "harvester", "sight", 50/1000*scaleLength);
+	board.set("game", "constants", "harvester", "range", 0/1000*scaleLength);
+	board.set("game", "constants", "harvester", "cost", 0/1000*scaleLength);
 
-	board.set("game", "constants", "annihilator", "speed", 100/1000*maxSize);
-	board.set("game", "constants", "annihilator", "sight", 100/1000*maxSize);
-	board.set("game", "constants", "annihilator", "range", 100/1000*maxSize);
-	board.set("game", "constants", "annihilator", "cost", 30/1000*maxSize);
+	board.set("game", "constants", "annihilator", "speed", 100/1000*scaleLength);
+	board.set("game", "constants", "annihilator", "sight", 100/1000*scaleLength);
+	board.set("game", "constants", "annihilator", "range", 100/1000*scaleLength);
+	board.set("game", "constants", "annihilator", "cost", 30/1000*scaleLength);
 	
-	board.set("game", "constants", "bomb", "speed", 300/1000*maxSize);
-	board.set("game", "constants", "bomb", "sight", 10/1000*maxSize);
-	board.set("game", "constants", "bomb", "range", 10/1000*maxSize);
-	board.set("game", "constants", "bomb", "cost", 50/1000*maxSize);	
+	board.set("game", "constants", "bomb", "speed", 300/1000*scaleLength);
+	board.set("game", "constants", "bomb", "sight", 10/1000*scaleLength);
+	board.set("game", "constants", "bomb", "range", 10/1000*scaleLength);
+	board.set("game", "constants", "bomb", "cost", 50/1000*scaleLength);
+	
+	board.set("game", "constants", "base", "speed", 0/1000*scaleLength);
+	board.set("game", "constants", "base", "sight", 200/1000*scaleLength);
+	board.set("game", "constants", "base", "range", 0/1000*scaleLength);
+	board.set("game", "constants", "base", "cost", 0/1000*scaleLength);
 }
 
 function addPlanets(board) //adds planets to a board
@@ -155,13 +176,13 @@ function addPlanets(board) //adds planets to a board
 function addPlanet(board)
 {
 	/*
-	 * WARNING: THE RANDOM POSITIONS SHOULD BE GENERATED DIFFERENTLY
-	 * THEY ARE CURRENTLY NOT APPLICABLE TO WHERE THE BASES ARE
-	 * 
+	 * the algorithm for adding planets has been modified
+	 * now they are added in a cube around the center
+	 * this may need to be modified
 	 */
-	var randomXPosition=Math.random()*1000/1000*maxSize;
-	var randomYPosition=Math.random()*1000/1000*maxSize;
-	var randomZPosition=Math.random()*1000/1000*maxSize;
+	var randomXPosition=(Math.random()-.5)*1000/1000*scaleLength;
+	var randomYPosition=(Math.random()-.5)*1000/1000*scaleLength;
+	var randomZPosition=(Math.random()-.5)*1000/1000*scaleLength;
 	board.set({
 		global: "game",
 		subscripts: ["POI", [randomXPosition, randomYPosition, randomZPosition], "contents"],
@@ -176,24 +197,25 @@ function addPlanet(board)
 
 function addBases(board) //adds data for the bases of each player
 {
+	//bases are put on the x-axis
 	board.set({
 		global:"game",
-		subscripts: ["POI", [.5*maxSize,0,0], "contents"],
+		subscripts: ["POI", [.5*scaleLength,0,0], "contents"],
 		data: "base"
 	});
 	board.set({
 		global:"game",
-		subscripts: ["POI", [.5*maxSize,0,0], "alignment"],
+		subscripts: ["POI", [.5*scaleLength,0,0], "alignment"],
 		data: "red"
 	});
 	board.set({
 		global:"game",
-		subscripts: ["POI", [-.5*maxSize,0,0], "contents"],
+		subscripts: ["POI", [-.5*scaleLength,0,0], "contents"],
 		data: "base"
 	});
 	board.set({
 		global:"game",
-		subscripts: ["POI", [-.5*maxSize,0,0], "alignment"],
+		subscripts: ["POI", [-.5*scaleLength,0,0], "alignment"],
 		data: "blue"
 	});
 }
@@ -222,15 +244,15 @@ function computeDistance(position1, position2) //computes the distance between t
 function printAllPOIs(board) //prints the location and some info for each POI
 {
 	var POIs=listPOI(board);
+	printPOIList(board, POIs);
+}
+
+function printPOIList(board, list) //prints info about the POIs on the list
+{
 	var s;
-	for (var i=0;i<POIs.length;i++)
+	for (var i=0;i<list.length;i++)
 	{
-		var thisPlace=POIs[i];
-		var printablePlace=[];
-		for (var j=0;j<thisPlace.length;j++)
-			{
-			printablePlace[j]=" "+Math.round(thisPlace[j]*100)/100+" ";
-			}
+		var thisPlace=list[i];
 		s="There is a ";
 		s+=board.get({
 			global:"game",
@@ -240,12 +262,13 @@ function printAllPOIs(board) //prints the location and some info for each POI
 			global:"game",
 			subscripts: ["POI", thisPlace, "contents"]
 		}).data;
-		s+=" at the location (";
-		s+=printablePlace;
-		s+=").";
+		s+=" at the location ";
+		s+= toCoordinate(thisPlace);
+		s+=".";
 		console.log(s);
 	}
 }
+
 
 function listPOI(board) //returns an array of the coordinates of each POI
 //note that when returned, they have been parsed into an array, despite being gotten as a string
@@ -285,16 +308,79 @@ function printDistances(board) //do not call, takes a long time to run
 	}
 }
 
+function trim(input) 
+/*
+ * rounds a number to two decimal places
+ * also handles arrays
+ * strings
+ * and arrays that have become strings
+ * 
+ */
+{
+	if (typeof(input)=="number")
+		{return (Math.round(input*100)/100);}
+	if(input instanceof Array)
+	{
+		var returnable=[];
+		for (var i=0;i<input.length;i++)
+		{
+			returnable[i]=trim(input[i]);
+		}
+		return returnable;
+	}
+	if(typeof(input)=="string")
+		{
+		if (input.indexOf(",")==-1) //if input does not contain a comma
+			{return trim (Number(input));}
+		else //ie if it was secretly an array
+			{return trim(input.split(","));}
+		}
+	assert.ok(false, "Trim() needs to be given a number, a string, or an array!");
+}
+
+function toCoordinate(position) //takes an array and returns a nice-looking string of the coordinates
+{
+	if (typeof(position)=="string")
+	{
+		return toCoordinate(position.split(","));
+	}
+	else
+	{
+		assert.ok(position instanceof Array, "toCoordinate() must be called on an array!");
+		var returnable="(";
+		for (var i=0;i<position.length;i++)
+		{
+			if (i!=0)
+			{
+				returnable+=", ";
+			}
+			returnable+=trim(position[i]);
+		}
+		returnable+=")";
+		return returnable;
+	}
+	
+}
+
 //<gameplay mechanisms>
 
 function addShip(board, position, type, alignment) //creates a ship
 {
-	var currentContents=board.get({
-		global: "game",
-		subscripts: ["POI", position, "contents"]
-	}).data;
-	assert.equal(currentContents, "", "If you add a ship to an occupied square, bad things happen!");
-	//note: this can be changed to work as an epsilon perturbation
+	//ensure that position is empty, and slightly change it if it is not
+	var currentContents=" ";
+	while (currentContents!="")
+	{
+		currentContents=board.get({
+			global: "game",
+			subscripts: ["POI", position, "contents"]
+		}).data;
+		if (currentContents!="")
+		{
+			position=epsilonPerturb(position);
+		}
+	}
+
+	//actually add the ship:
 	board.set({
 		global: "game",
 		subscripts: ["POI", position, "contents"],
@@ -308,23 +394,34 @@ function addShip(board, position, type, alignment) //creates a ship
 	console.log("Finished adding a ship!");
 }
 
+function epsilonPerturb(position)
+{
+	//changes position slightly in a random way
+	var randomDirection=Math.floor(position.length*Math.random());
+	position[randomDirection]+=2*(Math.random()-.5)*(scaleLength/10000);
+	return position;
+}
+
 function move(board, currentPosition, desiredPosition) //moves the ship from currentPosition towards desiredPosition
 {
 	if (typeof(currentPosition)==="string")
 		{ currentPosition=currentPosition.split(",");}
 	if (typeof(desiredPosition)==="string")
 		{ desiredPosition=desiredPosition.split(",");}
+	
 	var type=board.get({
 		global: "game",
 		subscripts: ["POI", currentPosition, "contents"]
 	}).data;
 	assert.notEqual(type, "", "There must be something at this position in order to move it!");
 	assert.notEqual(type, "planet", "You can't move a planet!");
+	
 	var distanceLimit=Number(board.get({
 		global: "game",
 		subscripts: ["constants", type, "speed"]
 	}).data);
 	var validDestination=computeDestination(currentPosition, desiredPosition, distanceLimit);
+	
 	board.merge({
 		to: {global: "game",
 			subscripts: ["POI", validDestination]},
@@ -348,7 +445,7 @@ function computeDestination(currentPosition, desiredPosition, maxRange)
 	assert.ok(maxRange>0, "You can't have a destination if you are travelling a non-positive distance!");
 	assert.equal(currentPosition.length, desiredPosition.length, "The positions must be n-tuples for the same n!");
 	var distanceToTravel=computeDistance(currentPosition, desiredPosition);
-	if (distanceToTravel<maxRange)
+	if (distanceToTravel<=maxRange)
 	{
 		return desiredPosition;
 	}
@@ -364,4 +461,75 @@ function computeDestination(currentPosition, desiredPosition, maxRange)
 		return finalPosition;
 	}
 }
+
+function listClosePOI(board, position, maxDistance) //returns an array of all POIs within maxDistance of position
+{
+	assert.ok(maxDistance>=0, "The max distance must be non-negative");
+	var POIArray=listPOI(board);
+	var returnable=[]; //returnable with be a 2D array with positions in the first space
+					   //and distances in the second
+	for (var i=0; i<POIArray.length; i++)
+	{
+		var distance=computeDistance(position, POIArray[i]);
+		if (distance<=maxDistance)
+		{
+			returnable.push ([POIArray[i], distance]);
+		}
+	}
+	return returnable;
+}
+
+function printVisible(board, player)
+//prints all POIs not owned by the player that are visible to player
+{
+	var visiblePOIs=listVisible(board, player);
+	console.log("The following things are visible to the "+ player+ " player:");
+	printPOIList(board, visiblePOIs);
+}
+
+function listVisible(board, player)
+{
+	var POIs=listPOI(board);
+	var visiblePOIs=[];
+	for (var i=0;i<POIs.length;i++)
+	{
+		var notOwned= board.get({
+			global: "game",
+			subscripts: ["POI", POIs[i], "alignment"]
+		}).data!=player; //if this thing is not owned by the player
+		if (notOwned)
+		{
+			var visible=false;
+			for (var j=0;j<POIs.length;j++) //for each POI
+			{
+				if (!visible&&j!=i) //if it is not already seen
+				{
+					var owned= board.get({
+						global: "game",
+						subscripts: ["POI", POIs[j], "alignment"]
+					}).data==player;
+					if (owned) //if j is owned by the player
+					{
+						var type= board.get({
+								global: "game",
+						subscripts: ["POI", POIs[j], "contents"]
+						}).data;
+						var sightRange=board.get({
+							global: "game",
+							subscripts: ["constants", type, "sight"]
+						}).data;
+						if (computeDistance(POIs[i], POIs[j])<=sightRange) //and i is within j's sight range
+						{
+							visible=true; //then it is seen
+						}
+					}
+				}
+			}
+			if (visible)
+				{visiblePOIs.push(POIs[i]);}
+		}
+	}
+	return visiblePOIs;
+}
+
 //<gameplay mechanisms>
