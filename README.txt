@@ -44,3 +44,7 @@ August 6.
 PATCH NOTES (8/6/12)
 This contains many small updates, primarily new and improved methods. epsilonPerturb(), listClosePOI(), printVisible(), 
 listVisible(), trim() (which is my personal favorite), and printPOIList() have all been added.
+
+PATH NOTES (8/6/12)
+This contains many improvements to the way ships move and other features. The basics of turn taking have been added, so
+the "game" currently consists of choosing which ship will move in a predetermined direction.

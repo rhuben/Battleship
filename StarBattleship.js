@@ -68,14 +68,28 @@ var assert=require('assert');
 
  
 var scaleLength=1000;
+var gameIsOver=false;
 startGame();
 
 
-/*
-var a= "100.1232421421";
-console.log("a: "+ a);
-console.log("trimmed a: "+ trim(a)); */
 
+/*process.stdin.resume();
+process.stdin.setEncoding('utf8');
+process.stdin.once('data', function (input) {
+	console.log("a");
+});
+
+process.stdin.pause();
+//process.stdin.resume();
+process.stdin.once('data', function (input) {
+	console.log("c");
+	process.exit();
+
+});
+console.log("b"); */
+
+
+		
 
 //<intializing functions>
 function startGame()
@@ -93,18 +107,17 @@ function startGame()
 	addShip(board, [0,0,0],"fighter", "blue");
 	addShip(board, [0,0,0],"fighter", "red");
 //	console.log("\nLet's take a look at what we have added:");
-	printAllPOIs(board);
+//	printAllPOIs(board);
 /*	console.log("\nNow let's move that ship and take another look at the map.");
 	move (board, [0,0,0], [200,100,100]);
 	printAllPOIs(board);
-	
 	console.log("\nNote that the ship could only move 200 units, so it traveled as far as possible in that direction.");
 	*/
 	console.log("\n");
-
-	printVisible(board, "blue");
-	printVisible(board, "red");
-	finishGame(board);
+//	printVisible(board, "blue");
+//	printVisible(board, "red");
+	takeTurn(board, "blue");
+//	finishGame(board);
 }
 
 function initializeMap() //returns a new map that has been initialized with various things
@@ -219,28 +232,11 @@ function addBases(board) //adds data for the bases of each player
 		data: "blue"
 	});
 }
-
 //</intializing functions>
 
-function finishGame(board) //clears the board and closes the database
-{
-	board.kill("game");
-	board.close();
-}
-
-function computeDistance(position1, position2) //computes the distance between the two n-tuples
-{
-	assert.equal(position1.length, position2.length, "The positions must both be n-tuples for the same n!");
-	var distanceSquared=0;
-	for (var i=0;i<position1.length;i++)
-	{
-		var deltaICoord=position1[i]-position2[i];
-		distanceSquared+=deltaICoord*deltaICoord;
-	}
-	return Math.sqrt(distanceSquared);
-}
 
 
+//<printing>
 function printAllPOIs(board) //prints the location and some info for each POI
 {
 	var POIs=listPOI(board);
@@ -269,52 +265,13 @@ function printPOIList(board, list) //prints info about the POIs on the list
 	}
 }
 
-
-function listPOI(board) //returns an array of the coordinates of each POI
-//note that when returned, they have been parsed into an array, despite being gotten as a string
-{
-	var ref="";
-	var returnable=[];
-	ref=board.order({
-		global: "game",
-		subscripts: ["POI", ref]
-	}).result;
-	while (ref!="")
-	{
-		returnable.push(ref.split(","));
-		ref=board.order({
-			global: "game",
-			subscripts: ["POI", ref]
-		}).result;
-	}
-	return returnable;
-}
-
-
-
-function printDistances(board) //do not call, takes a long time to run
-{
-	var POIs=listPOI(board);
-	for (var i=0;i<POIs.length;i++)
-	{
-		for (var j=i;j<POIs.length;j++)
-		{
-			var s="The distance from (";
-			s+= POIs[i]+ ") to ("+ POIs[j]+ ") is "; 
-			s+= computeDistance(POIs[i], POIs[j]);
-			console.log(s);
-		}
-		
-	}
-}
-
 function trim(input) 
 /*
+ * prepares the input for printing
  * rounds a number to two decimal places
  * also handles arrays
  * strings
  * and arrays that have become strings
- * 
  */
 {
 	if (typeof(input)=="number")
@@ -354,112 +311,66 @@ function toCoordinate(position) //takes an array and returns a nice-looking stri
 			{
 				returnable+=", ";
 			}
-			returnable+=trim(position[i]);
+			returnable+=trim(position[i]); //note that toCoordinate is pre-trimmed
 		}
 		returnable+=")";
 		return returnable;
 	}
-	
 }
 
-//<gameplay mechanisms>
-
-function addShip(board, position, type, alignment) //creates a ship
+function printDistances(board) //do not call, takes a long time to run
 {
-	//ensure that position is empty, and slightly change it if it is not
-	var currentContents=" ";
-	while (currentContents!="")
+	var POIs=listPOI(board);
+	for (var i=0;i<POIs.length;i++)
 	{
-		currentContents=board.get({
+		for (var j=i;j<POIs.length;j++)
+		{
+			var s="The distance from (";
+			s+= POIs[i]+ ") to ("+ POIs[j]+ ") is "; 
+			s+= computeDistance(POIs[i], POIs[j]);
+			console.log(s);
+		}
+		
+	}
+}
+
+function printVisible(board, player)
+//prints all POIs not owned by the player that are visible to player
+{
+	var visiblePOIs=listVisible(board, player);
+	console.log("The following things are visible to the "+ player+ " player:");
+	printPOIList(board, visiblePOIs);
+}
+
+function printOwned(board, player)
+{
+	var ownedPOIs=listOwned(board, player);
+	console.log("The following things are owned by the "+ player+ " player: ");
+	printPOIList(board, ownedPOIs);
+}
+//</printing>
+
+
+
+//<listing>
+function listPOI(board) //returns an array of the coordinates of each POI
+//note that when returned, they have been parsed into an array, despite being gotten as a string
+{
+	var ref="";
+	var returnable=[];
+	ref=board.order({
+		global: "game",
+		subscripts: ["POI", ref]
+	}).result;
+	while (ref!="")
+	{
+		returnable.push(ref.split(","));
+		ref=board.order({
 			global: "game",
-			subscripts: ["POI", position, "contents"]
-		}).data;
-		if (currentContents!="")
-		{
-			position=epsilonPerturb(position);
-		}
+			subscripts: ["POI", ref]
+		}).result;
 	}
-
-	//actually add the ship:
-	board.set({
-		global: "game",
-		subscripts: ["POI", position, "contents"],
-		data: type
-	});
-	board.set({
-		global: "game",
-		subscripts: ["POI", position, "alignment"],
-		data: alignment
-	});
-	console.log("Finished adding a ship!");
-}
-
-function epsilonPerturb(position)
-{
-	//changes position slightly in a random way
-	var randomDirection=Math.floor(position.length*Math.random());
-	position[randomDirection]+=2*(Math.random()-.5)*(scaleLength/10000);
-	return position;
-}
-
-function move(board, currentPosition, desiredPosition) //moves the ship from currentPosition towards desiredPosition
-{
-	if (typeof(currentPosition)==="string")
-		{ currentPosition=currentPosition.split(",");}
-	if (typeof(desiredPosition)==="string")
-		{ desiredPosition=desiredPosition.split(",");}
-	
-	var type=board.get({
-		global: "game",
-		subscripts: ["POI", currentPosition, "contents"]
-	}).data;
-	assert.notEqual(type, "", "There must be something at this position in order to move it!");
-	assert.notEqual(type, "planet", "You can't move a planet!");
-	
-	var distanceLimit=Number(board.get({
-		global: "game",
-		subscripts: ["constants", type, "speed"]
-	}).data);
-	var validDestination=computeDestination(currentPosition, desiredPosition, distanceLimit);
-	
-	board.merge({
-		to: {global: "game",
-			subscripts: ["POI", validDestination]},
-		from: {global: "game",
-			subscripts: ["POI", currentPosition]},
-	});
-	board.kill({
-		global:"game",
-		subscripts:["POI", currentPosition]
-	});
-	console.log("Movement successful!");	
-}
-
-function computeDestination(currentPosition, desiredPosition, maxRange)
-/*
- * takes ordered n-tuples and a positive number maxRange
- * and tells you where you end up if you try to go up to desiredPosition
- * but not more than maxRange
- */
-{
-	assert.ok(maxRange>0, "You can't have a destination if you are travelling a non-positive distance!");
-	assert.equal(currentPosition.length, desiredPosition.length, "The positions must be n-tuples for the same n!");
-	var distanceToTravel=computeDistance(currentPosition, desiredPosition);
-	if (distanceToTravel<=maxRange)
-	{
-		return desiredPosition;
-	}
-	else
-	{
-		var directionVector=[];
-		var finalPosition=[];
-		for (var i=0;i<currentPosition.length;i++)
-		{
-			directionVector[i]=(desiredPosition[i]-currentPosition[i])/distanceToTravel; //unit vector in the direction you want to go
-			finalPosition[i]=currentPosition[i]+maxRange*directionVector[i]; //vector math! Wheeeee!
-		}
-		return finalPosition;
-	}
+	return returnable;
 }
 
 function listClosePOI(board, position, maxDistance) //returns an array of all POIs within maxDistance of position
@@ -479,36 +390,28 @@ function listClosePOI(board, position, maxDistance) //returns an array of all PO
 	return returnable;
 }
 
-function printVisible(board, player)
-//prints all POIs not owned by the player that are visible to player
+function listVisible(board, player) //lists all POI that are visible to player
 {
-	var visiblePOIs=listVisible(board, player);
-	console.log("The following things are visible to the "+ player+ " player:");
-	printPOIList(board, visiblePOIs);
-}
-
-function listVisible(board, player)
-{
-	var POIs=listPOI(board);
+	var POIs=listPOI(board); //start with each POI
 	var visiblePOIs=[];
 	for (var i=0;i<POIs.length;i++)
 	{
 		var notOwned= board.get({
 			global: "game",
 			subscripts: ["POI", POIs[i], "alignment"]
-		}).data!=player; //if this thing is not owned by the player
+		}).data!=player; //if POI "i" is not owned by the player
 		if (notOwned)
 		{
 			var visible=false;
-			for (var j=0;j<POIs.length;j++) //for each POI
+			for (var j=0;j<POIs.length;j++) //for each POI "j"
 			{
-				if (!visible&&j!=i) //if it is not already seen
+				if (!visible&&j!=i) //if i is not already seen
 				{
 					var owned= board.get({
 						global: "game",
 						subscripts: ["POI", POIs[j], "alignment"]
 					}).data==player;
-					if (owned) //if j is owned by the player
+					if (owned) //and j is owned by the player
 					{
 						var type= board.get({
 								global: "game",
@@ -532,4 +435,251 @@ function listVisible(board, player)
 	return visiblePOIs;
 }
 
+function listOwned(board, player)
+{
+	var POIs=listPOI(board); //start with each POI
+	var ownedPOIs=[];
+	for (var i=0;i<POIs.length;i++)
+	{
+		if (board.get({
+			global: "game",
+			subscripts: ["POI", POIs[i], "alignment"]
+		}).data==player)
+		{
+			ownedPOIs.push(POIs[i]);
+		}
+	}
+	return ownedPOIs;
+}
+//</listing>
+
+
+
+//<position related>
+function epsilonPerturb(position)  //changes position slightly in a random way
+{
+	var randomDirection=Math.floor(position.length*Math.random());
+	position[randomDirection]+=2*(Math.random()-.5)*(scaleLength/10000);
+	return position;
+}
+
+function computeDistance(position1, position2) //computes the distance between the two n-tuples
+{
+	assert.equal(position1.length, position2.length, "The positions must both be n-tuples for the same n!");
+	var distanceSquared=0;
+	for (var i=0;i<position1.length;i++)
+	{
+		var deltaICoord=position1[i]-position2[i];
+		distanceSquared+=deltaICoord*deltaICoord;
+	}
+	return Math.sqrt(distanceSquared);
+}
+
+function toNumberArray(input)
+{
+	if (typeof input=="string")
+	{
+		input=input.split(",");
+	}
+	for (var i=0;i<input.length;i++)
+	{
+		input[i]=Number(input[i]);
+	}
+	return input;
+}
+//</position related>
+
 //<gameplay mechanisms>
+	//<movement related>
+function move(board, currentPosition, desiredPosition) //moves the ship from currentPosition towards desiredPosition
+{
+	currentPosition=toNumberArray(currentPosition);
+	desiredPosition=toNumberArray(desiredPosition);
+	if (arrayEquals(currentPosition, desiredPosition))
+	{
+		return;
+	}
+	
+	var type=board.get({
+		global: "game",
+		subscripts: ["POI", currentPosition, "contents"]
+	}).data;
+	assert.notEqual(type, "", "There must be something at this position in order to move it!");
+	assert.notEqual(type, "planet", "You can't move a planet!");
+	
+	var distanceLimit=Number(board.get({
+		global: "game",
+		subscripts: ["constants", type, "speed"]
+	}).data);
+	var validDestination=computeDestination(currentPosition, desiredPosition, distanceLimit);
+	if (arrayEquals(currentPosition, validDestination))
+	{
+		return;
+	}
+	//epsilon perturb validDestination until it gets to an empty space:
+	var currentContents="foo";
+	while (currentContents!="")
+	{
+		currentContents=board.get({
+			global: "game",
+			subscripts: ["POI", validDestination, "contents"]
+		}).data;
+		validDestination=epsilonPerturb(validDestination);
+	}
+	//actually set the data:
+	board.merge({
+		to: {global: "game",
+			subscripts: ["POI", validDestination]},
+		from: {global: "game",
+			subscripts: ["POI", currentPosition]},
+	});
+	board.kill({
+		global:"game",
+		subscripts:["POI", currentPosition]
+	});
+	console.log("Movement successful!");	
+}
+
+function computeDestination(currentPosition, desiredPosition, maxRange)
+/*
+ * takes ordered n-tuples and a positive number maxRange
+ * and tells you where you end up if you try to go up to desiredPosition
+ * but not more than maxRange
+ */
+{
+	assert.ok(maxRange>=0, "You can't have a destination if you are travelling a negative distance!");
+	assert.equal(currentPosition.length, desiredPosition.length, "The positions must be n-tuples for the same n!");
+	var distanceToTravel=computeDistance(currentPosition, desiredPosition);
+	if (distanceToTravel<=maxRange)
+	{
+		return desiredPosition;
+	}
+	else
+	{
+		var directionVector=[];
+		var finalPosition=[];
+		for (var i=0;i<currentPosition.length;i++)
+		{
+			directionVector[i]=(desiredPosition[i]-currentPosition[i])/distanceToTravel; //unit vector in the direction you want to go
+			finalPosition[i]=currentPosition[i]+maxRange*directionVector[i]; //vector math! Wheeeee!
+		}
+		//check to make sure finalPosition is empty
+		return finalPosition;
+	}
+}
+	//</movement related>
+//</gameplay mechanisms>
+
+
+
+
+//<miscellaneous>
+function finishGame(board) //clears the board and closes the database
+{
+	board.kill("game");
+	board.close();
+	process.exit();
+}
+
+function addShip(board, position, type, alignment) //creates a ship
+{
+	//ensure that position is empty, and slightly change it if it is not
+	var currentContents=" ";
+	while (currentContents!="")
+	{
+		currentContents=board.get({
+			global: "game",
+			subscripts: ["POI", position, "contents"]
+		}).data;
+		if (currentContents!="")
+		{
+			position=epsilonPerturb(position);
+		}
+	}
+	//actually add the ship data:
+	board.set({
+		global: "game",
+		subscripts: ["POI", position, "contents"],
+		data: type
+	});
+	board.set({
+		global: "game",
+		subscripts: ["POI", position, "alignment"],
+		data: alignment
+	});
+	console.log("Finished adding a ship!");
+}
+//</miscellaneous>
+
+
+function takeTurn(board, player)
+{
+	console.log("\n");
+	console.log("It is now the "+ player + " player's turn.");
+	console.log("He/she sees: ");
+	printOwned(board, player);
+	printVisible(board, player);
+	
+	console.log("Press enter to begin your move phase.");
+	
+	process.stdin.resume();
+	process.stdin.setEncoding('utf8');
+	process.stdin.once('data', function (input) 
+		{
+		movePhase(board, player);
+		});
+}
+
+function movePhase(board, player)
+{
+	console.log("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+	console.log("You have the following ships available to you:");
+	var ownedShips=listOwned(board, player);
+	for (var i=0;i<listOwned.length;i++)
+	{
+		var s=i+") A ";
+		s+=board.get({
+			global:"game",
+			subscripts: ["POI", ownedShips[i], "contents"]
+		}).data;
+		s+=" at the location ";
+		s+= toCoordinate(ownedShips[i]);
+		s+=".";
+		console.log(s);
+	}
+	process.stdout.write("\nSelect which ship to move or type 'end' to abort: ");
+	process.stdin.once('data', function (input) 
+		{
+			input=input.toString().trim();
+			if (input=="end")
+				{gameIsOver=true;}
+			else
+			{
+				var ownedShips=listOwned(board, player);
+				input=Math.floor(Number(input))%listOwned.length;
+				console.log("Your input was interpreted as "+ input);
+				move (board, toNumberArray(ownedShips[input]), [1000,0,0]);
+			}
+			if (gameIsOver)
+				{finishGame(board);}
+			else 
+			{
+				var otherPlayer="red";
+				if (player=="red")
+					{otherPlayer="blue";}
+				takeTurn(board, otherPlayer);
+			}
+		});
+}
+
+function arrayEquals(a, b) //checks if a and b are both arrays and are equal
+{
+	if (!a instanceof Array) return false;
+	if (!b instanceof Array) return false;
+	if (a.length!=b.length) return false;
+	for (var i=0;i<a.length;i++)
+	{
+		if (a[i]!=b[i]) return false;
+	}	
+	return true;
+}
